@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARL GLOBAL DATA - Gestion Devis & Factures</title>
+<!-- Local Font Awesome: works without internet -->
+<style>
+
+        body {
+            font-family: Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+            background-color: #0f172a;
+            color: #1e293b;
+        }
+
+        .heading-font {
+            font-family: 'Trebuchet MS', Arial, sans-serif;
+        }
+
+        /* Printable A4 dimensions preview */
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            box-sizing: border-box;
+            background: #ffffff;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+            position: relative;
+        }
+
+        /* Subtle grid watermark */
+        .watermark-bg {
+            background-image: radial-gradient(#2F0A6F 0.7px, transparent 0.7px);
+            background-size: 24px 24px;
+            opacity: 0.035;
+        }
+
+        /* Editable fields highlight */
+        .editable {
+            outline: none;
+            transition: all 0.2s;
+            border-radius: 4px;
+            padding: 1px 4px;
+        }
+        .editable:hover, .editable:focus {
+            background-color: #fef3c7;
+            box-shadow: 0 0 0 1px #f59e0b;
+        }
+
+        /* Compact document layout */
+        .company-contact-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 3px 9px;
+            flex-wrap: nowrap;
+            font-size: 9px;
+            line-height: 1.25;
+        }
+        .company-contact-line p { margin: 0; white-space: nowrap; }
+        .details-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .details-card { padding: 10px 12px; }
+        #itemsTable th { padding-top: 9px; padding-bottom: 9px; }
+        #itemsTable td { padding-top: 9px; padding-bottom: 9px; }
+        .document-heading { padding-bottom: 12px !important; gap: 12px !important; }
+        .document-heading .brand-block { gap: 8px !important; }
+        .document-heading .company-block { margin-top: 7px; }
+
+        /* Print formatting */
+        @page { size: A4 portrait; margin: 0; }
+        @media print {
+            body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+           
+            html, body {
+                width: 210mm !important;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
+            }
+
+            body {
+                display: block !important;
+            }
+
+            .a4-sheet {
+                width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                max-height: 297mm !important;
+                margin: 0 !important;
+                padding: 7mm 9mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                break-after: avoid-page !important;
+            }
+
+            .a4-sheet > .relative {
+                width: 100%;
+                transform-origin: top left;
+            }
+
+            .document-heading { padding-bottom: 8px !important; }
+            .company-contact-line { font-size: 7.4px !important; gap: 2px 6px !important; flex-wrap: nowrap !important; }
+            /*.details-grid { gap: 7px !important; margin-top: 10px !important; margin-bottom: 10px !important; }*/
+            .details-card { padding: 7px 9px !important; }
+            .details-card p { line-height: 1.2 !important; }
+            #itemsTable { font-size: 9px !important; }
+            #itemsTable th, #itemsTable td { padding: 5px 6px !important; }
+            .financial-grid { gap: 10px !important; margin-top: 10px !important; }
+            .financial-grid > div { padding: 8px !important; }
+            .signature-grid { margin-top: 10px !important; padding-top: 8px !important; gap: 12px !important; }
+            .signature-grid > div { height: 70px !important; padding: 7px !important; }
+            .document-footer { margin-top: 10px !important; padding-top: 6px !important; font-size: 8px !important; }
+            .watermark-bg { display: none !important; }
+            .editable:hover, .editable:focus {
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+
+
+    /* MEDIUM COMPACT A4 DESIGN */
+
+    /* Page spacing */
+    .a4-sheet {
+        padding: 6mm 8mm !important;
+    }
+
+    /* Header */
+    .document-heading {
+        padding-bottom: 7px !important;
+    }
+
+    .document-heading .brand-block {
+        padding: 12px !important;
+    }
+
+    #docMainTitle {
+        font-size: 26px !important;
+    }
+
+    /* Company information */
+    .details-card {
+        padding: 6px 8px !important;
+    }
+
+    .a4-sheet .my-4 {
+        margin-top: 7px !important;
+        margin-bottom: 7px !important;
+    }
+
+    /* Product table */
+    #itemsTable {
+        font-size: 9px !important;
+    }
+
+    #itemsTable th,
+    #itemsTable td {
+        padding: 3.5px 5px !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Financial summary */
+    .a4-sheet .mt-8 {
+        margin-top: 8px !important;
+    }
+
+    .a4-sheet .bg-slate-50.p-4.rounded-xl {
+        padding: 10px 12px !important;
+    }
+
+    #totalTtcDisplay {
+        font-size: 14px !important;
+    }
+
+    /* Signatures */
+    .signature-grid {
+        margin-top: 8px !important;
+        padding-top: 6px !important;
+    }
+
+    .signature-grid > div {
+        height: 55px !important;
+    }
+
+    /* Footer */
+    .document-footer {
+        margin-top: 8px !important;
+        padding-top: 5px !important;
+        font-size: 8px !important;
+    }
+
+
+            
+        }
+    </style>
+    <link rel="stylesheet" href="assets/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2F0A6F">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Global Data">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body class="min-h-screen p-3 sm:p-6 lg:p-8 flex flex-col items-center justify-start">
+
+    <!-- Control Header (Navigation & Actions) -->
+    <header class="no-print w-full max-w-[210mm] mb-5 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 p-4 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 text-white">
+        <!-- Mode Switcher -->
+        <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-xl border border-slate-700">
+            <button id="btnModeDevis" onclick="setDocMode('DEVIS')" class="px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-brandRed text-white shadow-md">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>DEVIS</span>
+            </button>
+            <button id="btnModeFacture" onclick="setDocMode('FACTURE')" class="px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+                <span>FACTURE</span>
+            </button>
+        </div>
+
+        <!-- Action Tools -->
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <!-- Start a new document -->
+            <button onclick="startNewDocument()" class="px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-700 hover:bg-emerald-600 border border-emerald-600 transition flex items-center gap-1.5 text-white">
+                <i class="fa-solid fa-file-circle-plus"></i>
+                <span>Nouveau document</span>
+            </button>
+
+            <!-- Add Item -->
+            <button onclick="addNewRow()" class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition flex items-center gap-1.5 text-slate-200">
+                <i class="fa-solid fa-plus text-emerald-400"></i>
+                <span>Ajouter Ligne</span>
+            </button>
+
+            <!-- TVA Toggle -->
+            <button id="tvaToggleBtn" onclick="toggleTvaOption()" class="px-3 py-2 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition flex items-center gap-1.5 text-slate-200">
+                <i class="fa-solid fa-percent text-blue-400"></i>
+                <span id="tvaToggleLabel">TVA : 19%</span>
+            </button>
+
+        
+            <!-- Print / PDF -->
+            <button onclick="window.print()" class="px-4 py-2 text-xs sm:text-sm font-bold rounded-lg bg-brandRed hover:bg-red-600 text-white shadow-lg shadow-red-500/25 transition flex items-center gap-2 active:scale-95">
+                <i class="fa-solid fa-print"></i>
+                <span>Imprimer / PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Document Paper Preview (A4 Sheet) -->
+    <main class="a4-sheet p-8 sm:p-12 rounded-xl border border-slate-200 text-slate-800 flex flex-col justify-between overflow-hidden">
+        
+        <div class="absolute inset-0 watermark-bg pointer-events-none"></div>
+
+        <div class="relative z-10">
+            <!-- Header: Branding & Document Reference -->
+            <div class="document-heading flex flex-row justify-between items-start gap-4 border-b-2 border-slate-100 pb-4">
+                
+                <!-- Brand Information -->
+                <div class="brand-block space-y-2 min-w-0 bg-gradient-to-br from-[#2F0A6F] to-[#2F0A6F] p-4 rounded-xl shadow-md border border-[#4389D8]">
+                    <div class="flex items-center gap-3">
+                        <!-- Custom Vector Logo matching the Global Data Emblem -->
+                        <div class="w-14 h-14 flex-shrink-0">
+                            <svg viewBox="0 0 160 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-sm">
+                                <path d="M 50 18 C 24 18 10 32 10 50 C 10 68 24 82 50 82 L 80 82 L 80 50 L 68 50 L 68 66 L 50 66 C 34 66 26 58 26 50 C 26 42 34 34 50 34 L 70 34 L 80 18 Z" fill="#ffffff" />
+                                <path d="M 80 18 L 92 34 L 110 34 C 126 34 134 42 134 50 C 134 58 126 66 110 66 L 92 66 L 92 50 L 80 50 L 80 82 L 110 82 C 136 82 150 68 150 50 C 150 32 136 18 110 18 Z" fill="#FF2E2C" />
+                                <polygon points="80,16 93,34 67,34" fill="#FF2E2C" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="heading-font text-2xl font-black tracking-tight" style="color: #ffffff;">GLOBAL</span>
+                            <span class="heading-font text-2xl font-black tracking-tight" style="color: #FF2E2C;">DATA</span>
+                            <div class="text-[10px] tracking-widest font-bold uppercase text-white/70">
+                                SARL • Digital Display & LED Solutions
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Document Identifier Box -->
+                <div class="text-right flex flex-col items-end flex-shrink-0 w-auto">
+                    <div id="badgeDocType" class="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-red-100 text-brandRed border border-red-200 mb-2">
+                        OFFRE DE PRIX
+                    </div>
+
+                    <h2 id="docMainTitle" class="text-3xl font-extrabold tracking-tight heading-font" style="color: #2F0A6F;">DEVIS</h2>
+                    
+                </div>
+            </div>
+
+            <!-- Compact company contact line -->
+            <!-- Company Contact & Introduction -->
+            <div class="bg-gradient-to-br from-[#2F0A6F] to-[#2F0A6F] text-white p-4 rounded-xl mt-3 mb-2 shadow-md">
+
+                <div class="company-contact-line text-white/90">
+                    <p class="font-bold text-white">SARL GLOBAL DATA</p>
+
+                    <p>
+                        <i class="fa-solid fa-location-dot text-[#FF2E2C]"></i>
+                        Lotissement Kabou Section 45 Ilot 38, Kouba, Alger
+                    </p>
+
+                    <p>
+                        <i class="fa-solid fa-phone text-[#FF2E2C]"></i>
+                        +213 552 41 86 27
+                    </p>
+
+                    <p>
+                        <i class="fa-solid fa-envelope text-[#FF2E2C]"></i>
+                        contact@globaldatale.com
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- Legal & Customer Details -->
+            
+            <!-- Legal Information & Invoice Details -->
+            <div class="my-4 text-xs">
+
+                <!-- Legal Information of SARL GLOBAL DATA -->
+                <div class="details-card bg-gradient-to-br from-slate-50 to-slate-100/70 rounded-xl border border-slate-200">
+                    <div class="flex items-center gap-2 mb-2 pb-1.5 border-b border-slate-200 text-brandNavy font-bold uppercase tracking-wider text-[11px]">
+                        <i class="fa-solid fa-shield-halved text-brandRed"></i>
+                        <span>Informations Fiscales & Légales</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-2 pt-1 text-[11px] text-slate-700">
+                        <p>
+                            <span class="font-semibold text-slate-600">RC :</span>
+                            <span class="font-mono text-slate-900">16/00-1052161B23</span>
+                        </p>
+
+                        <p>
+                            <span class="font-semibold text-slate-600">NIF :</span>
+                            <span class="font-mono text-slate-900">002316105216166</span>
+                        </p>
+
+                        <p>
+                            <span class="font-semibold text-slate-600">NIS :</span>
+                            <span class="font-mono text-slate-900">002316210346160</span>
+                        </p>
+
+                        <p>
+                            <span class="font-semibold text-slate-600">Adresse :</span>
+                            Lotissement Kabou Sect. 45 Ilot 38, Kouba
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Date & Client (Doit) -->
+                <div class="grid grid-cols-2 gap-3 mt-3">
+
+                    <!-- Date -->
+                    <div class="details-card bg-white rounded-xl border border-slate-200">
+                        <div class="font-bold text-brandNavy uppercase tracking-wider text-[11px] mb-2">
+                            <i class="fa-solid fa-calendar-days text-brandRed mr-1"></i>
+                            Date
+                        </div>
+                        <p class="text-slate-700 text-xs editable"
+                        contenteditable="true" id="documentDate">
+                            17/11/2026
+                        </p>
+                    </div>
+
+                    <!-- Doit -->
+                    <div class="details-card bg-white rounded-xl border border-slate-200">
+                        <div class="font-bold text-brandNavy uppercase tracking-wider text-[11px] mb-2">
+                            <i class="fa-solid fa-user text-brandRed mr-1"></i>
+                            Doit
+                        </div>
+                        <p class="text-slate-900 font-semibold text-xs editable"
+                        contenteditable="true" id="clientName">
+                            CLIENT / ENTREPRISE
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+
+            <!-- Items Table with Preloaded Items -->
+            <div class="overflow-x-auto rounded-xl border border-slate-200 shadow-sm mt-4">
+                <table class="w-full text-left text-xs border-collapse" id="itemsTable">
+                    <thead>
+                        <tr class="bg-brandNavy text-white font-semibold">
+                            <th class="py-3 px-3 w-10 text-center rounded-tl-lg">N°</th>
+                            <th class="py-3 px-4">DÉSIGNATION DES PRESTATIONS / ARTICLES</th>
+                            <th class="py-3 px-3 text-center w-28">QUANTITÉ</th>
+                            <th class="py-3 px-4 text-right w-36">P.U / HT (DA)</th>
+                            <th class="py-3 px-4 text-right w-40 rounded-tr-lg">MONTANT HT (DA)</th>
+                            <th class="py-3 px-2 w-10 text-center no-print"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200 bg-white" id="invoiceBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Financial Summary & Notes -->
+            <div class="mt-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
+
+                <!-- Left: Bank Details & In Words -->
+                <div class="md:col-span-7 space-y-3">
+            
+
+                    <!-- In Words -->
+                   
+                </div>
+
+                <!-- Right: Calculations Summary -->
+                <div class="space-y-2">                    
+                    <!-- Total HT -->
+                    <div class="flex justify-between items-center text-xs text-slate-700 font-medium">
+                        <span>TOTAL GÉNÉRAL HT :</span>
+                        <span class="font-semibold text-slate-900 font-mono" id="subtotalDisplay">5 306 000.00 DA</span>
+                    </div>
+
+                    <!-- TVA (19% or Exonérée) -->
+                    <div class="flex justify-between items-center text-xs text-slate-600" id="tvaRow">
+                        <span class="flex items-center gap-1">
+                            <span>TVA (19%) :</span>
+                        </span>
+                        <span class="font-semibold text-slate-900 font-mono" id="tvaDisplay">1 008 140.00 DA</span>
+                    </div>
+
+                
+
+                    <!-- Total TTC -->
+                    <div class="border-t border-slate-300 pt-2 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-900" id="lblTotalTtc">TOTAL TTC (DA) :</span>
+                        <span class="text-sm font-bold text-brandNavy font-mono" id="totalTtcDisplay">6 324 140.00 DA</span>
+                    </div>
+                    <!-- Amount in Words -->
+                    <div class="mt-3 pt-3 border-t border-slate-200 bg-white p-3 rounded-lg">
+            
+
+                        <p class="font-semibold italic text-brandNavy text-xs mt-1 editable"
+                        contenteditable="true" id="amountInWordsText">
+                            Cinq millions trois cent six mille dinars algériens HT
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Signatures Section -->
+            <div class="signature-grid grid grid-cols-2 gap-6 mt-5 pt-3 border-t border-slate-200 text-xs">
+                
+                <!-- Client signature / Accord -->
+                <div class="text-center  rounded-xl h-28 flex flex-col justify-between bg-slate-50/40">
+                    
+                </div>
+
+                <!-- Company Stamp -->
+                <!-- Empty Company Stamp Area -->
+                <div class="text-center p-3 border border-slate-200 rounded-xl h-28 bg-white flex flex-col justify-between">
+                    <span class="block font-bold text-slate-600 uppercase tracking-wide text-[10px]">
+                        SARL GLOBAL DATA &bull; Direction Commerciale
+                    </span>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Footer -->
+        <footer class="document-footer mt-5 pt-2 border-t-2 border-slate-200 text-[10px] text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2 relative z-10">
+            <div>
+                <span class="font-bold text-brandNavy">SARL GLOBAL DATA</span> &bull; 
+                <span>Lotissement Kabou Section 45 Ilot 38 Commune de Kouba, Alger</span>
+            </div>
+            <div class="flex items-center gap-3 text-slate-600">
+                <span>RC: <strong class="text-slate-700">16/00-1052161B23</strong></span>
+                <span>NIF: <strong class="text-slate-700">002316105216166</strong></span>
+                <span>NIS: <strong class="text-slate-700">002316210346160</strong></span>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- Quick User Guide Footer -->
+    <div class="no-print mt-5 text-center text-xs text-slate-400 max-w-xl">
+        <p><i class="fa-solid fa-circle-info text-brandRed mr-1"></i> Basculez en un clic entre <strong>DEVIS</strong> et <strong>FACTURE</strong>. Tous les champs en surbrillance jaune au survol sont directement éditables et les calculs se mettent à jour automatiquement.</p>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        let currentMode = 'DEVIS'; // 'DEVIS' or 'FACTURE'
+        let applyTva = true;
+        let applyTimbre = true;
+
+        // Number formatter with spaces (Algerian standard)
+        function formatDA(num) {
+            return num.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' DA';
+        }
+
+        // Parse numerical input safely
+        function parseCleanNumber(str) {
+            if (!str) return 0;
+            // extract digits, commas or periods
+            const cleaned = str.toString().replace(/\s/g, '').replace(/DA|DZD|m2/gi, '').replace(',', '.');
+            return parseFloat(cleaned) || 0;
+        }
+
+        // Handle quantity changes when users write "18 m2" or "1"
+        function onQtyChange(element) {
+            const raw = element.innerText;
+            const hidden = element.parentElement.querySelector('.qty-num');
+            const numericVal = parseFloat(raw.replace(/[^\d.-]/g, '')) || 1;
+            hidden.value = numericVal;
+            recalculateInvoice();
+        }
+
+        // Recalculate Subtotal, TVA, Timbre, and TTC
+        function recalculateInvoice() {
+            const rows = document.querySelectorAll('#invoiceBody tr');
+            let totalHT = 0;
+
+            rows.forEach(row => {
+                const qtyHidden = row.querySelector('.qty-num');
+                const priceEl = row.querySelector('.unit-price');
+                const totalEl = row.querySelector('.row-total');
+
+                const qty = parseFloat(qtyHidden ? qtyHidden.value : 1) || 1;
+                const unitPrice = parseCleanNumber(priceEl ? priceEl.innerText : '0');
+                
+                // If it's a fixed package like the 18m2 screen entered as lump sum 4 980 000 DA:
+                const lineTotal = (qty > 1 && !row.querySelector('.qty-display')?.innerText.includes('m2')) 
+                                    ? (qty * unitPrice) 
+                                    : unitPrice;
+
+                totalHT += lineTotal;
+                if (totalEl) {
+                    totalEl.innerText = lineTotal.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            });
+
+            const tva = applyTva ? (totalHT * 0.19) : 0;
+            const timbre = (applyTimbre && totalHT > 0) ? (totalHT > 5000000 ? 10000 : 2500) : 0;
+            const totalTTC = totalHT + tva + timbre;
+
+            document.getElementById('subtotalDisplay').innerText = formatDA(totalHT);
+            document.getElementById('tvaDisplay').innerText = applyTva ? formatDA(tva) : 'Exonérée (0%)';
+            const timbreDisplay = document.getElementById('timbreDisplay');
+            if (timbreDisplay) timbreDisplay.innerText = applyTimbre ? formatDA(timbre) : '0.00 DA';
+            document.getElementById('totalTtcDisplay').innerText = formatDA(totalTTC);
+            saveLocalData();
+        }
+
+        // Add new service item
+        function addNewRow() {
+            const tbody = document.getElementById('invoiceBody');
+            const newIndex = tbody.children.length + 1;
+
+            const tr = document.createElement('tr');
+            tr.className = 'item-row hover:bg-slate-50/70 transition';
+            tr.innerHTML = `
+                <td class="py-3.5 px-3 text-center font-bold text-slate-400 row-index">${newIndex}</td>
+                <td class="py-3.5 px-4">
+                    <div class="font-bold text-slate-900 editable" contenteditable="true">Nouvelle prestation audiovisuelle / Équipement</div>
+                </td>
+                <td class="py-3.5 px-3 text-center">
+                    <span class="editable font-semibold text-slate-800 qty-display" contenteditable="true" onblur="onQtyChange(this)">1</span>
+                    <input type="hidden" class="qty-num" value="1">
+                </td>
+                <td class="py-3.5 px-4 text-right">
+                    <span class="editable font-mono font-medium text-slate-800 unit-price" contenteditable="true" onblur="recalculateInvoice()">100 000</span>
+                </td>
+                <td class="py-3.5 px-4 text-right font-mono font-bold text-slate-900 row-total">
+                    100 000.00
+                </td>
+                <td class="py-3.5 px-2 text-center no-print">
+                    <button onclick="deleteRow(this)" class="text-rose-400 hover:text-rose-600 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            recalculateInvoice();
+        }
+
+        // Delete Row
+        function deleteRow(btn) {
+            const row = btn.closest('tr');
+            const tbody = document.getElementById('invoiceBody');
+            if (tbody.children.length > 1) {
+                row.remove();
+                // update row numbers
+                document.querySelectorAll('#invoiceBody tr').forEach((r, idx) => {
+                    r.querySelector('.row-index').innerText = idx + 1;
+                });
+                recalculateInvoice();
+            }
+        }
+
+        // Switch between DEVIS and FACTURE
+        function setDocMode(mode) {
+            currentMode = mode;
+            const btnDevis = document.getElementById('btnModeDevis');
+            const btnFacture = document.getElementById('btnModeFacture');
+            const badge = document.getElementById('badgeDocType');
+            const title = document.getElementById('docMainTitle');
+            const validityRow = document.getElementById('validityRow');
+            const lblInWords = document.getElementById('lblInWords');
+            const legalNotice = document.getElementById('legalNoticeBottom');
+            const lblClientSig = document.getElementById('lblClientSignatureBox');
+
+            if (mode === 'DEVIS') {
+                btnDevis.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-brandRed text-white shadow-md';
+                btnFacture.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white';
+                
+                badge.innerText = 'OFFRE DE PRIX';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-red-100 text-brandRed border border-red-200 mb-2';
+                title.innerText = 'DEVIS';
+                if (validityRow) validityRow.style.display = 'none';
+                lblInWords.innerText = "Arrêté la présente offre à la somme de :";
+                if (legalNotice) legalNotice.innerText = "* Ce devis constitue un engagement de prix pendant sa durée de validité (30 jours). Pour valider la commande, veuillez nous retourner le présent document signé et revêtu du cachet de l'entreprise avec la mention 'Bon pour accord'.";
+                lblClientSig.innerText = "Bon pour accord & Cachet Client";
+            } else {
+                btnFacture.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-brandNavy text-white shadow-md';
+                btnDevis.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white';
+                
+                badge.innerText = 'PROFORMA';
+                badge.className = 'px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-indigo-100 text-brandNavy border border-indigo-200 mb-2';
+                title.innerText = 'FACTURE';
+                if (validityRow) validityRow.style.display = 'none';
+                lblInWords.innerText = "Arrêté la présente facture à la somme de :";
+                if (legalNotice) legalNotice.innerText = "* Les marchandises et prestations fournies restent la propriété exclusive de SARL GLOBAL DATA jusqu'à encaissement complet du montant facturé. En cas de retard de règlement, des pénalités légales seront exigibles.";
+                lblClientSig.innerText = "Reçu conforme & Cachet Réception";
+            }
+            saveLocalData();
+        }
+
+        // Toggle TVA on or off
+        function toggleTvaOption() {
+            applyTva = !applyTva;
+            const btn = document.getElementById('tvaToggleLabel');
+            btn.innerText = applyTva ? 'TVA : 19%' : 'TVA : 0% (Exonéré)';
+            recalculateInvoice();
+        }
+
+        // Toggle Stamp on or off
+        function toggleTimbreOption() {
+            applyTimbre = !applyTimbre;
+            const btn = document.getElementById('timbreToggleLabel');
+            if (btn) btn.innerText = applyTimbre ? 'Timbre : Inclus' : 'Timbre : Sans';
+            recalculateInvoice();
+        }
+
+
+
+        // Start a completely new quote/invoice without deleting other saved data.
+        function startNewDocument() {
+            if (!confirm('Commencer un nouveau document ? Le document actuel sera remplacé.')) return;
+
+            isRestoringLocalData = true;
+            const tbody = document.getElementById('invoiceBody');
+            tbody.innerHTML = '';
+
+            const today = new Date();
+            const dateText = String(today.getDate()).padStart(2, '0') + '/' +
+                String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
+            document.getElementById('documentDate').innerText = dateText;
+            document.getElementById('clientName').innerText = 'CLIENT / ENTREPRISE';
+            document.getElementById('amountInWordsText').innerText = '';
+
+            applyTva = true;
+            applyTimbre = true;
+            currentMode = 'DEVIS';
+            addNewRow();
+            const firstRow = tbody.querySelector('tr');
+            if (firstRow) {
+                const editableCells = firstRow.querySelectorAll('[contenteditable="true"]');
+                if (editableCells[0]) editableCells[0].innerText = '';
+                if (editableCells[1]) editableCells[1].innerText = '';
+                const price = firstRow.querySelector('.unit-price');
+                if (price) price.innerText = '0';
+            }
+            isRestoringLocalData = false;
+
+            setDocMode('DEVIS');
+            const tvaLabel = document.getElementById('tvaToggleLabel');
+            if (tvaLabel) tvaLabel.innerText = 'TVA : 19%';
+            const timbreLabel = document.getElementById('timbreToggleLabel');
+            if (timbreLabel) timbreLabel.innerText = 'Timbre : Inclus';
+            recalculateInvoice();
+            saveLocalData();
+        }
+
+        // Local autosave: data stays on this device/browser only (no cloud sync).
+        const LOCAL_SAVE_KEY = 'global-data-devis-factures-v1';
+        let isRestoringLocalData = false;
+
+        function saveLocalData() {
+            if (isRestoringLocalData) return;
+            try {
+                const editable = {};
+                ['documentDate', 'clientName', 'amountInWordsText'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) editable[id] = el.innerText;
+                });
+                const data = {
+                    version: 1,
+                    currentMode,
+                    applyTva,
+                    applyTimbre,
+                    editable,
+                    invoiceBody: document.getElementById('invoiceBody')?.innerHTML || ''
+                };
+                localStorage.setItem(LOCAL_SAVE_KEY, JSON.stringify(data));
+            } catch (error) {
+                console.warn('Local save unavailable:', error);
+            }
+        }
+
+        function restoreLocalData() {
+            try {
+                const raw = localStorage.getItem(LOCAL_SAVE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (!data || data.version !== 1) return false;
+                isRestoringLocalData = true;
+                if (data.editable) {
+                    Object.entries(data.editable).forEach(([id, value]) => {
+                        const el = document.getElementById(id);
+                        if (el && typeof value === 'string') el.innerText = value;
+                    });
+                }
+                if (typeof data.invoiceBody === 'string' && data.invoiceBody) {
+                    document.getElementById('invoiceBody').innerHTML = data.invoiceBody;
+                }
+                applyTva = data.applyTva !== false;
+                applyTimbre = data.applyTimbre !== false;
+                currentMode = data.currentMode === 'FACTURE' ? 'FACTURE' : 'DEVIS';
+                isRestoringLocalData = false;
+                setDocMode(currentMode);
+                const tvaLabel = document.getElementById('tvaToggleLabel');
+                if (tvaLabel) tvaLabel.innerText = applyTva ? 'TVA : 19%' : 'TVA : 0% (Exonéré)';
+                recalculateInvoice();
+                return true;
+            } catch (error) {
+                isRestoringLocalData = false;
+                console.warn('Could not restore local data:', error);
+                return false;
+            }
+        }
+
+        document.addEventListener('input', (event) => {
+            if (event.target && event.target.isContentEditable) saveLocalData();
+        });
+        document.addEventListener('change', saveLocalData);
+        window.addEventListener('beforeunload', saveLocalData);
+
+        window.addEventListener('beforeprint', () => {
+            const sheet = document.querySelector('.a4-sheet');
+            const content = sheet?.querySelector('.relative.z-10');
+            if (!sheet || !content) return;
+            content.style.zoom = '1';
+            const available = sheet.clientHeight - 54;
+            const needed = content.scrollHeight;
+            if (needed > available) {
+                content.style.zoom = String(Math.max(0.55, available / needed));
+            }
+        });
+        window.addEventListener('afterprint', () => {
+            const content = document.querySelector('.a4-sheet .relative.z-10');
+            if (content) content.style.zoom = '';
+        });
+
+        // Initialize calculations on page load
+        window.onload = function() {
+            const restored = restoreLocalData();
+            if (!restored && document.querySelectorAll('#invoiceBody tr').length === 0) addNewRow();
+            recalculateInvoice();
+        };
+
+        // Offline support: cache the app shell after it is first opened online.
+        if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Offline worker registration failed:', err)));
+        }
+    </script>
+    
+</body>
+</html>
