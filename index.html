@@ -525,7 +525,8 @@
             recalculateInvoice();
         }
 
-        // Recalculate Subtotal, TVA, Timbre, and TTC
+        
+        // Recalculate Subtotal, TVA, and TTC
         function recalculateInvoice() {
             const rows = document.querySelectorAll('#invoiceBody tr');
             let totalHT = 0;
@@ -537,29 +538,31 @@
 
                 const qty = parseFloat(qtyHidden ? qtyHidden.value : 1) || 1;
                 const unitPrice = parseCleanNumber(priceEl ? priceEl.innerText : '0');
-                
-                // If it's a fixed package like the 18m2 screen entered as lump sum 4 980 000 DA:
-                const lineTotal = (qty > 1 && !row.querySelector('.qty-display')?.innerText.includes('m2')) 
-                                    ? (qty * unitPrice) 
-                                    : unitPrice;
+
+                const lineTotal = (qty > 1 && !row.querySelector('.qty-display')?.innerText.includes('m2'))
+                    ? (qty * unitPrice)
+                    : unitPrice;
 
                 totalHT += lineTotal;
+
                 if (totalEl) {
-                    totalEl.innerText = lineTotal.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    totalEl.innerText = lineTotal.toLocaleString('fr-DZ', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
                 }
             });
 
             const tva = applyTva ? (totalHT * 0.19) : 0;
-            const timbre = (applyTimbre && totalHT > 0) ? (totalHT > 5000000 ? 10000 : 2500) : 0;
-            const totalTTC = totalHT + tva + timbre;
+            const totalTTC = totalHT + tva;
 
             document.getElementById('subtotalDisplay').innerText = formatDA(totalHT);
             document.getElementById('tvaDisplay').innerText = applyTva ? formatDA(tva) : 'Exonérée (0%)';
-            const timbreDisplay = document.getElementById('timbreDisplay');
-            if (timbreDisplay) timbreDisplay.innerText = applyTimbre ? formatDA(timbre) : '0.00 DA';
             document.getElementById('totalTtcDisplay').innerText = formatDA(totalTTC);
+
             saveLocalData();
         }
+
 
         // Add new service item
         function addNewRow() {
