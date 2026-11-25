@@ -77,6 +77,13 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            .payment-conditions input {
+                display: none !important;
+            }
+
+            .hidden-print {
+                display: inline !important;
+            }
             .no-print {
                 display: none !important;
             }
@@ -129,6 +136,8 @@
                 background: transparent !important;
                 box-shadow: none !important;
             }
+
+            
 
 
     /* MEDIUM COMPACT A4 DESIGN */
@@ -354,11 +363,21 @@
                             <span class="font-semibold text-slate-600">NIS :</span>
                             <span class="font-mono text-slate-900">002316210346160</span>
                         </p>
+                        <p>
+                            <span class="font-semibold text-slate-600">ART :</span>
+                            <span class="font-mono text-slate-900">16183165027</span>
+                        </p>
+
+                        <p>
+                            <span class="font-semibold text-slate-600">RIB :</span>
+                            <span class="font-mono text-slate-900">00200095095220139825</span>
+                        </p>
 
                         <p>
                             <span class="font-semibold text-slate-600">Adresse :</span>
                             Lotissement Kabou Sect. 45 Ilot 38, Kouba
                         </p>
+                        
                     </div>
                 </div>
 
@@ -458,6 +477,60 @@
 
             </div>
 
+            <!-- Payment Conditions -->
+            <div class="payment-conditions mt-4 p-3 rounded-xl border border-slate-200 bg-white text-xs">
+
+                <div class="font-bold text-brandNavy uppercase tracking-wider mb-3">
+                    <i class="fa-solid fa-money-bill-transfer text-brandRed mr-1"></i>
+                    Conditions de paiement
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+
+                    <!-- First Payment -->
+                    <div>
+                        <p class="font-semibold text-slate-700 mb-1">
+                            À la commande
+                        </p>
+
+                        <div class="flex items-center gap-2">
+                            <input
+                                type="number"
+                                id="paymentFirstPercent"
+                                min="0"
+                                max="100"
+                                value="50"
+                                class="editable w-16 font-bold text-center border border-slate-300 rounded p-1 no-print"
+                                oninput="updatePaymentConditions()"
+                            >
+
+                            <span id="paymentFirstPercentPrint" class="hidden-print font-bold">50%</span>
+
+                            <span class="text-slate-500">=</span>
+
+                            <strong id="paymentFirstAmount">0,00 DA</strong>
+                        </div>
+                    </div>
+
+                    <!-- Second Payment -->
+                    <div>
+                        <p class="font-semibold text-slate-700 mb-1">
+                            Le jour de la livraison
+                        </p>
+
+                        <div class="flex items-center gap-2">
+                            <strong id="paymentSecondPercent">50%</strong>
+
+                            <span class="text-slate-500">=</span>
+
+                            <strong id="paymentSecondAmount">0,00 DA</strong>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+
             <!-- Signatures Section -->
             <div class="signature-grid grid grid-cols-2 gap-6 mt-5 pt-3 border-t border-slate-200 text-xs">
                 
@@ -478,7 +551,7 @@
         </div>
 
         <!-- Document Footer -->
-        <footer class="document-footer mt-5 pt-2 border-t-2 border-slate-200 text-[10px] text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2 relative z-10">
+        <footer class="document-footer mt-5 pt-2 border-t-2 border-slate-200 text-sm text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2 relative z-10">
             <div>
                 <span class="font-bold text-brandNavy">SARL GLOBAL DATA</span> &bull; 
                 <span>Lotissement Kabou Section 45 Ilot 38 Commune de Kouba, Alger</span>
@@ -553,15 +626,51 @@
                 }
             });
 
-            const tva = applyTva ? (totalHT * 0.19) : 0;
+            const tva = (currentMode === 'FACTURE' && applyTva)
+                ? totalHT * 0.19
+                : 0;
+
             const totalTTC = totalHT + tva;
 
             document.getElementById('subtotalDisplay').innerText = formatDA(totalHT);
             document.getElementById('tvaDisplay').innerText = applyTva ? formatDA(tva) : 'Exonérée (0%)';
             document.getElementById('totalTtcDisplay').innerText = formatDA(totalTTC);
 
+            updatePaymentConditions();
             saveLocalData();
         }
+        
+        function updatePaymentConditions() {
+
+            const input = document.getElementById('paymentFirstPercent');
+
+            let firstPercent = parseFloat(input.value);
+
+            if (isNaN(firstPercent)) firstPercent = 0;
+
+            firstPercent = Math.max(0, Math.min(100, firstPercent));
+
+            const secondPercent = 100 - firstPercent;
+
+            const total = parseCleanNumber(
+                document.getElementById('totalTtcDisplay').innerText
+            );
+
+            document.getElementById('paymentFirstPercentPrint').innerText =
+                firstPercent + '%';
+
+            document.getElementById('paymentSecondPercent').innerText =
+                secondPercent + '%';
+
+            document.getElementById('paymentFirstAmount').innerText =
+                formatDA(total * firstPercent / 100);
+
+            document.getElementById('paymentSecondAmount').innerText =
+                formatDA(total * secondPercent / 100);
+
+            saveLocalData();
+        }
+
 
 
         // Add new service item
@@ -622,6 +731,8 @@
             const lblClientSig = document.getElementById('lblClientSignatureBox');
 
             if (mode === 'DEVIS') {
+                document.getElementById('tvaRow').style.display = 'none';
+                applyTva = false;
                 btnDevis.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-brandRed text-white shadow-md';
                 btnFacture.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white';
                 
@@ -633,6 +744,8 @@
                 if (legalNotice) legalNotice.innerText = "* Ce devis constitue un engagement de prix pendant sa durée de validité (30 jours). Pour valider la commande, veuillez nous retourner le présent document signé et revêtu du cachet de l'entreprise avec la mention 'Bon pour accord'.";
                 lblClientSig.innerText = "Bon pour accord & Cachet Client";
             } else {
+                document.getElementById('tvaRow').style.display = 'flex';
+                applyTva = true;
                 btnFacture.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 bg-brandNavy text-white shadow-md';
                 btnDevis.className = 'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 text-slate-300 hover:text-white';
                 
@@ -644,6 +757,13 @@
                 if (legalNotice) legalNotice.innerText = "* Les marchandises et prestations fournies restent la propriété exclusive de SARL GLOBAL DATA jusqu'à encaissement complet du montant facturé. En cas de retard de règlement, des pénalités légales seront exigibles.";
                 lblClientSig.innerText = "Reçu conforme & Cachet Réception";
             }
+            const tvaLabel = document.getElementById('tvaToggleLabel');
+
+            if (tvaLabel) {
+                tvaLabel.innerText = applyTva ? 'TVA : 19%' : 'TVA : 0% (Exonéré)';
+            }
+
+            recalculateInvoice();
             saveLocalData();
         }
 
@@ -700,6 +820,7 @@
             const timbreLabel = document.getElementById('timbreToggleLabel');
             if (timbreLabel) timbreLabel.innerText = 'Timbre : Inclus';
             recalculateInvoice();
+
             saveLocalData();
         }
 
